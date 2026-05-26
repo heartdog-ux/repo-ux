@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Grinders vs. Artists — WTA Style Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --q1: #1a5fa8;
+    --q2: #b83232;
+    --q3: #3a6d10;
+    --q4: #8a5010;
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --ink: #1a1814;
+    --muted: #7a7570;
+    --border: rgba(26,24,20,0.10);
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 48px 60px 36px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(32px, 5vw, 54px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    margin-top: 12px;
+    max-width: 540px;
+    line-height: 1.6;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .meta-row span { display: flex; align-items: center; gap: 5px; }
+  .dot-sm { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Main content */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 60px;
+  }
+
+  /* Axis legend */
+  .axis-legend {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .axis-item {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .axis-label {
+    font-weight: 500;
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  /* Filter buttons */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px 0 12px;
+  }
+
+  .filter-btn {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 5px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid;
+  }
+
+  .filter-btn:hover { opacity: 0.8; }
+  .filter-btn.active { color: #fff !important; }
+
+  .filter-btn[data-q="all"] {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: transparent;
+  }
+  .filter-btn[data-q="all"].active {
+    background: var(--ink);
+  }
+  .filter-btn[data-q="q1"] { border-color: var(--q1); color: var(--q1); background: transparent; }
+  .filter-btn[data-q="q1"].active { background: var(--q1); }
+  .filter-btn[data-q="q2"] { border-color: var(--q2); color: var(--q2); background: transparent; }
+  .filter-btn[data-q="q2"].active { background: var(--q2); }
+  .filter-btn[data-q="q3"] { border-color: var(--q3); color: var(--q3); background: transparent; }
+  .filter-btn[data-q="q3"].active { background: var(--q3); }
+  .filter-btn[data-q="q4"] { border-color: var(--q4); color: var(--q4); background: transparent; }
+  .filter-btn[data-q="q4"].active { background: var(--q4); }
+
+  /* Chart container */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 200px);
+    min-height: 560px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .chart-wrap canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Tooltip card */
+  .tap-hint {
+    display: none;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  @media (max-width: 768px) {
+    .tap-hint { display: block; }
+  }
+
+  #tooltip-card {
+    display: none;
+    margin-top: 12px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    min-height: 52px;
+    transition: opacity 0.1s;
+  }
+
+  #tooltip-card .tt-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  #tooltip-card .tt-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  #tooltip-card .tt-rank {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  #tooltip-card .tt-quad {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #fff;
+    margin-left: auto;
+  }
+
+  #tooltip-card .tt-note {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Quadrant explainer */
+  .quad-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    margin-top: 32px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--border);
+  }
+
+  .quad-card {
+    background: var(--surface);
+    padding: 20px 22px;
+  }
+
+  .quad-card .q-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .quad-card h3 {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .quad-card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .quad-card .examples {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+
+
+  /* Footer */
+  footer {
+    max-width: 1400px;
+    margin: 40px auto 0;
+    padding: 20px 60px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 768px) {
+    header { padding: 28px 20px 22px; }
+    main { padding: 0 20px; }
+    footer { padding: 16px 20px 0; }
+    h1 { font-size: 28px; }
+    .subtitle { font-size: 14px; }
+    .axis-legend { gap: 10px; padding: 12px 0 0; }
+    .filters { gap: 6px; padding: 10px 0 10px; }
+    .filter-btn { font-size: 10px; padding: 4px 10px; }
+    .chart-wrap {
+      height: 70vw;
+      min-height: 320px;
+      max-height: 480px;
+    }
+    .quad-grid { grid-template-columns: 1fr 1fr; }
+    .quad-card { padding: 14px 16px; }
+    .quad-card h3 { font-size: 15px; }
+    .quad-card p { font-size: 12px; }
+    .tap-hint {
+    display: none;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  @media (max-width: 768px) {
+    .tap-hint { display: block; }
+  }
+
+  #tooltip-card { font-size: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .quad-grid { grid-template-columns: 1fr; }
+    .chart-wrap {
+      height: 85vw;
+      min-height: 280px;
+    }
+    .meta-row { gap: 8px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Data Visualization · Women's Tennis</p>
+  <h1>Grinders vs. <em>Artists</em></h1>
+  <p class="subtitle">How the WTA Top 50 actually play — mapped across two axes that matter: how stable their game is, and how they use that to win.</p>
+  <div class="meta-row">
+    <span><span class="dot-sm" style="background:var(--q2)"></span> Stable aggressors dominate the top 10</span>
+    <span><span class="dot-sm" style="background:var(--q4)"></span> Creative players cluster mid-rankings</span>
+    <span>Rankings: WTA, 25 May 2026</span>
+  </div>
+</header>
+
+<main>
+  <div class="axis-legend">
+    <div class="axis-item">
+      <span class="axis-label">X-axis:</span> Stability (low errors, repeatable patterns) → Creativity (variety, improvisation)
+    </div>
+    <div class="axis-item">
+      <span class="axis-label">Y-axis:</span> Defensive / reactive → Offensive / proactive
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-q="all" onclick="filterQ('all')">All 50</button>
+    <button class="filter-btn" data-q="q1" onclick="filterQ('q1')">Stable Defenders</button>
+    <button class="filter-btn" data-q="q2" onclick="filterQ('q2')">Stable Aggressors</button>
+    <button class="filter-btn" data-q="q3" onclick="filterQ('q3')">Creative Defenders</button>
+    <button class="filter-btn" data-q="q4" onclick="filterQ('q4')">Creative Aggressors</button>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="wtaChart" role="img" aria-label="Scatter chart placing WTA top 50 players across four playing style quadrants"></canvas>
+  </div>
+
+  <p class="tap-hint">Tap a dot to see player details</p>
+  <div id="tooltip-card">
+    <div class="tt-header">
+      <span class="tt-name" id="tt-name"></span>
+      <span class="tt-rank" id="tt-rank"></span>
+      <span class="tt-quad" id="tt-quad"></span>
+    </div>
+    <div class="tt-note" id="tt-note"></div>
+  </div>
+
+  <div class="quad-grid">
+    <div class="quad-card">
+      <div class="q-label" style="color:var(--q1)">Q1 · Stable Defenders</div>
+      <h3 style="color:var(--q1)">The Wall</h3>
+      <p>Low errors, repeatable patterns, win by making you beat them. Reliability is the weapon.</p>
+      <div class="examples">Svitolina · Pegula · Gauff · Jovic</div>
+    </div>
+    <div class="quad-card">
+      <div class="q-label" style="color:var(--q2)">Q2 · Stable Aggressors</div>
+      <h3 style="color:var(--q2)">The Machine</h3>
+      <p>Have a system and run it at you relentlessly. The hardest to beat — no seam to exploit.</p>
+      <div class="examples">Sabalenka · Swiatek · Rybakina · Keys</div>
+    </div>
+    <div class="quad-card">
+      <div class="q-label" style="color:var(--q3)">Q3 · Creative Defenders</div>
+      <h3 style="color:var(--q3)">The Disruptor</h3>
+      <p>Not dominant but annoying — redirects, slices, unexpected angles without being reckless.</p>
+      <div class="examples">Kostyuk · Vondrousova · Siegemund</div>
+    </div>
+    <div class="quad-card">
+      <div class="q-label" style="color:var(--q4)">Q4 · Creative Aggressors</div>
+      <h3 style="color:var(--q4)">The Artist</h3>
+      <p>Drop shots, net rushes, improvised aggression. Unplayable when on. Fragile when off.</p>
+      <div class="examples">Muchova · Ostapenko · Navarro · Paolini</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>Grinders vs. Artists · WTA Style Map</span>
+  <span>Rankings as of 25 May 2026 · Placement reflects playing style, not ranking order</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const Q = { q1:'#1a5fa8', q2:'#b83232', q3:'#3a6d10', q4:'#8a5010' };
+const QNAMES = { q1:'Stable Defender', q2:'Stable Aggressor', q3:'Creative Defender', q4:'Creative Aggressor' };
+
+const allPlayers = [
+  { label:'Sabalenka',    rank:1,  x:1.6, y:8.8, q:'q2', note:'Repeatable power system, relentless aggression, low creative variance' },
+  { label:'Rybakina',     rank:2,  x:2.0, y:7.8, q:'q2', note:'Stable serve-based game, clean flat patterns, disciplined structure' },
+  { label:'Swiatek',      rank:3,  x:2.4, y:8.4, q:'q2', note:'Dominant topspin system, relentless pressure, rarely deviates from plan' },
+  { label:'Gauff',        rank:4,  x:2.6, y:3.8, q:'q1', note:'High-level retrieval, consistent patterns, wins through reliability and opponent errors' },
+  { label:'Pegula',       rank:5,  x:2.2, y:4.2, q:'q1', note:'Textbook system player, low errors, wins through patience and reliability' },
+  { label:'Anisimova',    rank:6,  x:2.8, y:7.0, q:'q2', note:'Flat power game, structured aggression, clinical ball-striking' },
+  { label:'Svitolina',    rank:7,  x:2.0, y:2.4, q:'q1', note:'Elite counterpuncher, minimal errors, defensive wall' },
+  { label:'Andreeva',     rank:8,  x:3.2, y:6.8, q:'q2', note:'Controlled baseline aggressor, heavy topspin patterns, improving structure' },
+  { label:'Mboko',        rank:9,  x:3.6, y:6.4, q:'q2', note:'Athletic, consistent patterns, aggressive from baseline, emerging star' },
+  { label:'Muchova',      rank:10, x:7.8, y:7.2, q:'q4', note:'Daring angles, creative shot-making, unorthodox under pressure' },
+  { label:'Bencic',       rank:11, x:3.4, y:4.6, q:'q1', note:'Clean ball-striking, steady patterns, reliable system play' },
+  { label:'Noskova',      rank:12, x:5.8, y:6.8, q:'q4', note:'Flat aggressive hitter, unpredictable tempo shifts' },
+  { label:'Paolini',      rank:13, x:6.4, y:7.0, q:'q4', note:'Energetic variety, net forays, creative patterns, hard to read' },
+  { label:'Alexandrova',  rank:14, x:1.8, y:4.6, q:'q1', note:'Consistent, solid baseline game, low-risk structured patterns' },
+  { label:'Kostyuk',      rank:15, x:6.0, y:3.8, q:'q3', note:'Clever shot selection, slice use, redirects well, crafty defender' },
+  { label:'Osaka',        rank:16, x:4.6, y:6.6, q:'q2', note:'Power-based aggression with creative flair, borderline Q2/Q4' },
+  { label:'Jovic',        rank:17, x:2.4, y:3.4, q:'q1', note:'System-based, structured patterns, developing consistency' },
+  { label:'Cirstea',      rank:18, x:6.0, y:6.0, q:'q4', note:'Flat aggressive hitter, unpredictable shot selection, goes for broke' },
+  { label:'Keys',         rank:19, x:2.2, y:7.6, q:'q2', note:'Explosive power system, flat-ball aggressor, high-pace patterns' },
+  { label:'Tauson',       rank:20, x:5.6, y:6.2, q:'q4', note:'Creative flat hitter, net attacks, tactical variety' },
+  { label:'Mertens',      rank:21, x:4.2, y:3.2, q:'q1', note:'Steady all-surface grinder, reliable patterns, low errors' },
+  { label:'Fernandez',    rank:22, x:6.4, y:5.4, q:'q4', note:'Crafty patterns, creative angles, upsets top players with variety' },
+  { label:'Shnaider',     rank:23, x:3.0, y:6.4, q:'q2', note:'Powerful baseline aggressor, structured flat game, big hitter' },
+  { label:'Kalinskaya',   rank:24, x:3.4, y:6.2, q:'q2', note:'Aggressive baseline game, consistent patterns, powerful flat hitting' },
+  { label:'Navarro',      rank:25, x:6.8, y:6.6, q:'q4', note:'Inventive, tactically flexible, hard to read, creative patterns' },
+  { label:'Baptiste',     rank:26, x:3.8, y:4.0, q:'q1', note:'Consistent, steady baseline game, disciplined patterns' },
+  { label:'Samsonova',    rank:27, x:3.2, y:5.8, q:'q2', note:'Heavy topspin aggressor, consistent power patterns' },
+  { label:'Bouzkova',     rank:28, x:5.2, y:3.4, q:'q3', note:'Slice-heavy, intelligent defensive patterns, crafty all-court game' },
+  { label:'Ann Li',       rank:29, x:3.6, y:3.6, q:'q1', note:'Reliable, low-error baseliner, steady structured game' },
+  { label:'Potapova',     rank:30, x:5.8, y:5.6, q:'q4', note:'Flat aggressive hitter, unpredictable shot selection' },
+  { label:'Ostapenko',    rank:31, x:7.0, y:7.8, q:'q4', note:'High-risk flat aggressor, wildly unpredictable, boom or bust' },
+  { label:'Cristian',     rank:32, x:4.0, y:3.0, q:'q1', note:'Solid grinder, consistent patterns, defensive reliability' },
+  { label:'Bucsa',        rank:33, x:4.2, y:2.8, q:'q1', note:'Steady defensive player, low errors, gritty style' },
+  { label:'Wang Xinyu',   rank:34, x:4.6, y:3.4, q:'q1', note:'Consistent, reliable baseline patterns, low creative risk' },
+  { label:'Eala',         rank:35, x:5.2, y:4.8, q:'q3', note:'Structured intent but execution still developing — borderline Q1/Q3' },
+  { label:'Sakkari',      rank:36, x:2.8, y:3.2, q:'q1', note:'Athletic grinder, consistent patterns, defensive tenacity' },
+  { label:'Raducanu',     rank:37, x:6.6, y:5.8, q:'q4', note:'Creative shot-making, unorthodox angles, high ceiling and variance' },
+  { label:'Yastremska',   rank:38, x:6.2, y:6.4, q:'q4', note:'Improvised aggression, flat creative hitter, unpredictable pace' },
+  { label:'Cocciaretto',  rank:39, x:3.4, y:3.0, q:'q1', note:'Consistent baseline grinder, low errors, steady patterns' },
+  { label:'Frech',        rank:40, x:4.0, y:4.4, q:'q1', note:'Solid, reliable patterns, tactical steadiness' },
+  { label:'Tjen',         rank:41, x:4.4, y:3.8, q:'q1', note:'Steady baseliner, consistent structure, emerging top-50 player' },
+  { label:'Siegemund',    rank:42, x:5.6, y:4.2, q:'q3', note:'Slice-heavy, intelligent defensive patterns, crafty all-court game' },
+  { label:'Valentova',    rank:43, x:3.8, y:3.4, q:'q1', note:'Disciplined young player, structured patterns, low risk' },
+  { label:'Vondrousova',  rank:44, x:6.8, y:4.6, q:'q3', note:'Lefty slice, drop shots, tricky angles — creative defensive disruptor' },
+  { label:'Kessler',      rank:45, x:3.2, y:4.8, q:'q1', note:'Consistent power game, reliable patterns' },
+  { label:'Bejlek',       rank:46, x:4.6, y:4.2, q:'q1', note:'Steady young player, building consistency' },
+  { label:'Krejcikova',   rank:47, x:6.4, y:5.2, q:'q4', note:'Creative, net-confident, tactically varied, crafty patterns' },
+  { label:'Siniakova',    rank:48, x:5.6, y:3.6, q:'q3', note:'Doubles-influenced variety, creative touches, all-court game' },
+  { label:'Marcinko',     rank:49, x:4.6, y:3.2, q:'q1', note:'Consistent young player, structured baseline game' },
+  { label:'Boisson',      rank:50, x:5.4, y:4.6, q:'q3', note:'Flat hitter, developing patterns, creative touches emerging' },
+];
+
+let activeQ = 'all';
+
+function rankToRadius(rank) {
+  if (rank <= 10) return 14;
+  if (rank <= 20) return 11;
+  if (rank <= 35) return 8;
+  return 6;
+}
+
+const datasets = allPlayers.map(p => ({
+  label: p.label,
+  data: [{ x: p.x, y: p.y, note: p.note, rank: p.rank, q: p.q }],
+  backgroundColor: Q[p.q] + 'cc',
+  borderColor: Q[p.q],
+  borderWidth: 1.5,
+  pointRadius: rankToRadius(p.rank),
+  pointHoverRadius: rankToRadius(p.rank) + 3,
+}));
+
+const quadBg = {
+  id: 'quadBg',
+  beforeDraw(chart) {
+    const { ctx, chartArea: { left, top, right, bottom, width, height } } = chart;
+    const mx = left + width/2, my = top + height/2;
+    const fills = [
+      'rgba(26,95,168,0.05)', 'rgba(184,50,50,0.05)',
+      'rgba(58,109,16,0.05)', 'rgba(138,80,16,0.05)'
+    ];
+    [[left,my,mx,bottom,fills[0]],[left,top,mx,my,fills[1]],[mx,my,right,bottom,fills[2]],[mx,top,right,my,fills[3]]].forEach(([x1,y1,x2,y2,c])=>{
+      ctx.save(); ctx.fillStyle=c; ctx.fillRect(x1,y1,x2-x1,y2-y1); ctx.restore();
+    });
+    ctx.save();
+    ctx.strokeStyle='rgba(26,24,20,0.09)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(mx,top); ctx.lineTo(mx,bottom); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(left,my); ctx.lineTo(right,my); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+};
+
+const quadLabels = {
+  id: 'quadLabels',
+  afterDraw(chart) {
+    const { ctx, chartArea: { left, top, right, bottom, width, height } } = chart;
+    const mx = left + width/2, my = top + height/2;
+    ctx.save();
+    const isMob = window.innerWidth <= 768;
+    ctx.font = `500 ${isMob ? 8 : 11}px "DM Sans", system-ui, sans-serif`;
+    [
+      [left+10, bottom-12, Q.q1, 'STABLE DEFENDERS'],
+      [left+10, top+14,    Q.q2, 'STABLE AGGRESSORS'],
+      [mx+10,   bottom-12, Q.q3, 'CREATIVE DEFENDERS'],
+      [mx+10,   top+14,    Q.q4, 'CREATIVE AGGRESSORS'],
+    ].forEach(([x,y,col,txt]) => {
+      ctx.globalAlpha = 0.45; ctx.fillStyle = col;
+      ctx.fillText(txt, x, y);
+    });
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+};
+
+const dotLabels = {
+  id: 'dotLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = '400 11px "DM Sans", system-ui, sans-serif';
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      if (!meta.data[0]) return;
+      const p = allPlayers[i];
+      if (activeQ !== 'all' && p.q !== activeQ) return;
+      const { x, y } = meta.data[0].getProps(['x','y'], true);
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = Q[p.q];
+      ctx.fillText(ds.label, x + 9, y + 3.5);
+    });
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+};
+
+const sizeLegend = {
+  id: 'sizeLegend',
+  afterDraw(chart) {
+    if (window.innerWidth <= 768) return;
+    const { ctx, chartArea: { right, top } } = chart;
+    const fam = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    const tiers = [
+      { r: 13, label: 'Top 10' },
+      { r: 11, label: '11–20' },
+      { r: 9,  label: '21–35' },
+      { r: 7,  label: '36–50' },
+    ];
+    ctx.save();
+    const x = right - 10;
+    let y = top + 18;
+    ctx.font = `500 9px ${fam}`;
+    ctx.fillStyle = 'rgba(26,24,20,0.4)';
+    ctx.textAlign = 'right';
+    ctx.fillText('DOT SIZE = RANKING', x, y);
+    y += 14;
+    tiers.forEach(t => {
+      ctx.beginPath();
+      ctx.arc(x - 36, y, t.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(26,24,20,0.12)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(26,24,20,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.font = `400 9px ${fam}`;
+      ctx.fillStyle = 'rgba(26,24,20,0.45)';
+      ctx.textAlign = 'right';
+      ctx.fillText(t.label, x, y + 3.5);
+      y += (t.r * 2) + 6;
+    });
+    ctx.restore();
+  }
+};
+
+const chart = new Chart(document.getElementById('wtaChart'), {
+  type: 'scatter',
+  data: { datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    layout: { padding: { top: 12, right: 120, bottom: 36, left: 12 } },
+    onResize(chart, size) {
+      // Redraw on resize so mobile/desktop labels toggle correctly
+      chart.update('none');
+    },
+    scales: {
+      x: {
+        min: 0, max: 10,
+        title: { display: true, text: '← Stability          Creativity →', color: '#9a9590', font: { size: 11, family: '"DM Sans", system-ui' } },
+        ticks: { display: false },
+        grid: { color: 'rgba(26,24,20,0.05)' },
+        border: { color: 'rgba(26,24,20,0.15)' }
+      },
+      y: {
+        min: 0, max: 10,
+        title: { display: true, text: '← Defensive          Offensive →', color: '#9a9590', font: { size: 11, family: '"DM Sans", system-ui' } },
+        ticks: { display: false },
+        grid: { color: 'rgba(26,24,20,0.05)' },
+        border: { color: 'rgba(26,24,20,0.15)' }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        external(context) {
+          const card = document.getElementById('tooltip-card');
+          if (context.tooltip.opacity === 0) {
+            if (window.innerWidth > 768) card.style.display = 'none';
+            return;
+          }
+          const dp = context.tooltip.dataPoints?.[0];
+          if (!dp) return;
+          const raw = dp.raw;
+          document.getElementById('tt-name').textContent = dp.dataset.label;
+          document.getElementById('tt-rank').textContent = 'WTA #' + raw.rank;
+          const quad = document.getElementById('tt-quad');
+          quad.textContent = QNAMES[raw.q];
+          quad.style.background = Q[raw.q];
+          document.getElementById('tt-note').textContent = raw.note || '';
+          card.style.display = 'block';
+          // On mobile, scroll card into view
+          if (window.innerWidth <= 768) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        },
+        enabled: false
+      }
+    }
+  },
+  plugins: [quadBg, quadLabels, dotLabels, sizeLegend]
+});
+
+function filterQ(q) {
+  activeQ = q;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.q === q);
+  });
+  chart.data.datasets.forEach((ds, i) => {
+    const p = allPlayers[i];
+    const visible = q === 'all' || p.q === q;
+    ds.pointRadius = visible ? rankToRadius(p.rank) : 2.5;
+    ds.pointHoverRadius = visible ? rankToRadius(p.rank) + 3 : 2.5;
+    ds.backgroundColor = visible ? Q[p.q] + 'cc' : Q[p.q] + '1a';
+    ds.borderColor = visible ? Q[p.q] : Q[p.q] + '2a';
+  });
+  chart.update('none');
+}
+</script>
+</body>
+</html>
